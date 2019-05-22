@@ -86,6 +86,17 @@ class Item:
         """(float) Returns the item's maximum durability"""
         raise NotImplementedError("An Item subclass must implement a get_max_durability method")
 
+class FoodItem(Item):
+    def __init__(self, item_id, strength):
+        super().__init__(item_id)
+        self.strength = strength
+
+    def get_strength(self):
+        return self.strength
+
+    def can_attack(self):
+        return False
+
 
 class HandItem(Item):
     """The player's hands, infinitely durable and the item used to attack by default"""
@@ -175,3 +186,8 @@ TOOL_DURABILITIES = {
 
 # Types of tools that can be made from a resource (material)
 MATERIAL_TOOL_TYPES = {"axe", "shovel", "hoe", "pickaxe", "sword"}
+
+# food strength
+FOOD_STRENGTH = {
+    "apple": 2
+}

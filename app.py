@@ -18,7 +18,7 @@ import pymunk
 
 from block import Block, ResourceBlock, BREAK_TABLES, LeafBlock, TrickCandleFlameBlock
 from grid import Stack, Grid, SelectableGrid, ItemGridView
-from item import Item, SimpleItem, HandItem, BlockItem, MATERIAL_TOOL_TYPES, TOOL_DURABILITIES
+from item import Item, SimpleItem, HandItem, BlockItem, MATERIAL_TOOL_TYPES, TOOL_DURABILITIES, FoodItem, FOOD_STRENGTH
 from player import Player
 from dropped_item import DroppedItem
 from crafting import GridCrafter, CraftingWindow
@@ -93,6 +93,8 @@ def create_item(*item_id):
 
         if item_id[0] in MATERIAL_TOOL_TYPES and item_id[1] in TOOL_DURABILITIES:
             raise NotImplementedError("Tool creation is not yet handled")
+        elif item_id[0] == "food":
+            return FoodItem(item_id[1], FOOD_STRENGTH[item_id[1]])
 
     elif len(item_id) == 1:
 
@@ -105,13 +107,31 @@ def create_item(*item_id):
             return BlockItem(item_type)
 
         # Task 1.4 Basic Items: Create wood & stone here
-        # ...
+        elif item_type == "wood":
+            return BlockItem("wood")
+        elif item_type == "stone":
+            return BlockItem("stone")
 
     raise KeyError(f"No item defined for {item_id}")
 
 
 # Task 1.3: Implement StatusView class here
-# ...
+class StatusView(tk.Frame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.health = tk.DoubleVar()
+        self.food = tk.DoubleVar()
+        tk.Label(self, text="health:", height=2, ).pack(side=tk.LEFT)
+        tk.Label(self, textvariable=self.health, height=2, ).pack(side=tk.LEFT)
+        tk.Label(self, textvariable=self.food, height=2).pack(side=tk.RIGHT)
+        tk.Label(self, text="food:", height=2).pack(side=tk.RIGHT)
+
+    def set_health(self, health):
+        self.health.set( int(health * 2) /2 )
+
+    def set_food(self, food):
+        self.food.set( int(food * 2) / 2)
+
 
 BLOCK_COLOURS = {
     'diamond': 'blue',
@@ -202,6 +222,7 @@ class Ninedraft:
         """
 
         self._master = master
+        master.wm_title("NineCraft")
         self._world = World((GRID_WIDTH, GRID_HEIGHT), BLOCK_SIZE)
 
         load_simple_world(self._world)
@@ -215,7 +236,9 @@ class Ninedraft:
         self._hot_bar.select((0, 0))
 
         starting_hotbar = [
-            Stack(create_item("dirt"), 20)
+            Stack(create_item("dirt"), 20),
+            Stack(create_item("food","apple"), 4)
+
         ]
 
         for i, item in enumerate(starting_hotbar):
@@ -236,21 +259,23 @@ class Ninedraft:
                           lambda e: self.run_effect(('crafting', 'basic')))
 
         self._view = GameView(master, self._world.get_pixel_size(), WorldViewRouter(BLOCK_COLOURS, ITEM_COLOURS))
+
         self._view.pack()
 
         # Task 1.2 Mouse Controls: Bind mouse events here
-        # ...
         self._master.bind("<Motion>", self._mouse_move)
         self._master.bind("<1>", self._left_click)
         self._master.bind("<3>", self._right_click)
         # Task 1.3: Create instance of StatusView here
-        # ...
-
+        status_view = StatusView(self._master)
+        status_view.pack()
+        status_view.set_food(self._player.get_food())
+        status_view.set_health(self._player.get_health())
         self._hot_bar_view = ItemGridView(master, self._hot_bar.get_size())
         self._hot_bar_view.pack(side=tk.TOP, fill=tk.X)
 
         # Task 1.5 Keyboard Controls: Bind to space bar for jumping here
-        # ...
+        self._master.bind("<space>", lambda x: self._jump())
 
         self._master.bind("a", lambda e: self._move(-1, 0))
         self._master.bind("<Left>", lambda e: self._move(-1, 0))
@@ -260,12 +285,10 @@ class Ninedraft:
         self._master.bind("<Down>", lambda e: self._move(0, 1))
 
         # Task 1.5 Keyboard Controls: Bind numbers to hotbar activation here
-        # ...
         # must capture i in a closure, or all key binding will active index-9, need a `let` in javascript
         for i in range(10):
             self._master.bind(str((i + 1) % 10), (lambda x: lambda e: self._activate_item(x))(i))
         # Task 1.6 File Menu & Dialogs: Add file menu here
-        # ...
         fbar = tk.Menu(self._master)
         sbar = tk.Menu(fbar)
         sbar.add_command(label="New Game", command=self.restart_confirm)
@@ -306,13 +329,11 @@ class Ninedraft:
         cursor_position = self._world.grid_to_xy_centre(*self._world.xy_to_grid(target_x, target_y))
 
         # Task 1.2 Mouse Controls: Show/hide target here
-        # ...
         if target and self._target_in_range:
             self._view.show_target(self._player.get_position(), cursor_position)
         else:
             self._view.hide_target()
         # Task 1.3 StatusView: Update StatusView values here
-        # ...
 
         # hot bar
         self._hot_bar_view.render(self._hot_bar.items(), self._hot_bar.get_selected())

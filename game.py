@@ -9,7 +9,6 @@ __copyright__ = "The University of Queensland, 2019"
 
 import tkinter as tk
 from typing import Iterable
-
 from instance_router import InstanceRouter
 from physical_thing import PhysicalThing
 from block import Block, TrickCandleFlameBlock
@@ -17,6 +16,8 @@ from dropped_item import DroppedItem
 from player import Player
 from physical_thing import BoundaryWall
 from mob import Mob, Bird
+
+
 
 
 class GameView(tk.Canvas):
